@@ -104,6 +104,63 @@ void menu()
     return;
 }
 
+void guardarInstrucciones(char *nombre, lista *memoriaIns)
+{
+    FILE *pArchivo;
+    pArchivo = fopen(nombre, "r");
+
+    char linea[50];
+    while (!feof(pArchivo))
+    {
+        fgets(linea, 50, pArchivo);
+        limpiarLinea(linea);
+
+        char *token1, *token2, *token3, *token4;
+        token1 = strtok(linea, " ");
+
+        if (strcmp(token1, "add") == 0 || strcmp(token1, "sub") == 0 || strcmp(token1, "and") == 0 ||
+            strcmp(token1, "or") == 0 || strcmp(token1, "slt") == 0)
+        {
+            token2 = strtok(NULL, " ");
+            token3 = strtok(NULL, " ");
+            token4 = strtok(NULL, " ");
+            ingresarInstruccion(memoriaIns, 1, token1, token2, token3, token4);
+        }
+        else if (strcmp(token1, "lw") == 0 || strcmp(token1, "sw") == 0)
+        {
+            token2 = strtok(NULL, " ");
+            token3 = strtok(NULL, " ");
+            token4 = strtok(NULL, " ");
+            ingresarInstruccion(memoriaIns, 2, token1, token2, token3, token4);
+        }
+        else if (strcmp(token1, "addi") == 0)
+        {
+            token2 = strtok(NULL, " ");
+            token3 = strtok(NULL, " ");
+            token4 = strtok(NULL, " ");
+            ingresarInstruccion(memoriaIns, 3, token1, token2, token3, token4);
+        }
+        else if (strcmp(token1, "beq") == 0)
+        {
+            token2 = strtok(NULL, " ");
+            token3 = strtok(NULL, " ");
+            token4 = strtok(NULL, " ");
+            ingresarInstruccion(memoriaIns, 4, token1, token2, token3, token4);
+        }
+        else if (strcmp(token1, "j") == 0)
+        {
+            token2 = strtok(NULL, " ");
+            ingresarInstruccion(memoriaIns, 5, token1, token2, "placeholder", "placeholder");
+        }
+        else if (strchr(token1, ':') != NULL)
+        {
+            ingresarInstruccion(memoriaIns, 6, token1, "placeholder", "placeholder", "placeholder");
+        }
+    }
+    fclose(pArchivo);
+    return;
+}
+
 void ingresarInstruccion(lista *memoriaIns, int tipoIns, char *token1, char *token2, char *token3, char *token4)
 {
     nodo *instruccion = (nodo *)malloc(sizeof(nodo));
@@ -236,7 +293,6 @@ void ejecucionPrograma(lista *memoriaIns, char *archivo)
             imprimirInstruccion(contadorPrograma);
             */
 
-            modificarControl(contadorPrograma);
             ejecutarInstruccion(contadorPrograma);
 
             if (etiqueta != NULL) // Existe branch o jump
@@ -261,10 +317,8 @@ void ejecucionPrograma(lista *memoriaIns, char *archivo)
 
             // Escritura en archivo
             fprintf(pArchivo, "Control > ");
-            escribirControl(&pArchivo);
             fprintf(pArchivo, "v Registros v\n");
             escribirRegistros(&pArchivo);
-            escribirError(&pArchivo);
 
             /*
             // Traza por consola
@@ -604,271 +658,6 @@ int obtenerDato(char *string)
     else if (strcmp(string, "$ra") == 0)
     {
         return ra;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-int direccionNumericaRegistro(char *string)
-{
-    if (strcmp(string, "$zero") == 0)
-    {
-        return 0;
-    }
-    else if (strcmp(string, "$at") == 0)
-    {
-        return 2048;
-    }
-    else if (strcmp(string, "$v0") == 0)
-    {
-        return 4096;
-    }
-    else if (strcmp(string, "$v1") == 0)
-    {
-        return 6144;
-    }
-    else if (strcmp(string, "$a0") == 0)
-    {
-        return 8192;
-    }
-    else if (strcmp(string, "$a1") == 0)
-    {
-        return 10240;
-    }
-    else if (strcmp(string, "$a2") == 0)
-    {
-        return 12288;
-    }
-    else if (strcmp(string, "$a3") == 0)
-    {
-        return 14336;
-    }
-    else if (strcmp(string, "$t0") == 0)
-    {
-        return 16384;
-    }
-    else if (strcmp(string, "$t1") == 0)
-    {
-        return 18432;
-    }
-    else if (strcmp(string, "$t2") == 0)
-    {
-        return 20480;
-    }
-    else if (strcmp(string, "$t3") == 0)
-    {
-        return 22528;
-    }
-    else if (strcmp(string, "$t4") == 0)
-    {
-        return 24576;
-    }
-    else if (strcmp(string, "$t5") == 0)
-    {
-        return 26624;
-    }
-    else if (strcmp(string, "$t6") == 0)
-    {
-        return 28672;
-    }
-    else if (strcmp(string, "$t7") == 0)
-    {
-        return 30720;
-    }
-    else if (strcmp(string, "$s0") == 0)
-    {
-        return 32768;
-    }
-    else if (strcmp(string, "$s1") == 0)
-    {
-        return 34816;
-    }
-    else if (strcmp(string, "$s2") == 0)
-    {
-        return 36864;
-    }
-    else if (strcmp(string, "$s3") == 0)
-    {
-        return 38912;
-    }
-    else if (strcmp(string, "$s4") == 0)
-    {
-        return 40960;
-    }
-    else if (strcmp(string, "$s5") == 0)
-    {
-        return 43008;
-    }
-    else if (strcmp(string, "$s6") == 0)
-    {
-        return 45056;
-    }
-    else if (strcmp(string, "$s7") == 0)
-    {
-        return 47104;
-    }
-    else if (strcmp(string, "$t8") == 0)
-    {
-        return 49152;
-    }
-    else if (strcmp(string, "$t9") == 0)
-    {
-        return 51200;
-    }
-    else if (strcmp(string, "$k0") == 0)
-    {
-        return 53248;
-    }
-    else if (strcmp(string, "$k1") == 0)
-    {
-        return 55296;
-    }
-    else if (strcmp(string, "$gp") == 0)
-    {
-        return 57344;
-    }
-    else if (strcmp(string, "$sp") == 0)
-    {
-        return 59392;
-    }
-    else if (strcmp(string, "$fp") == 0)
-    {
-        return 61440;
-    }
-    else if (strcmp(string, "$ra") == 0)
-    {
-        return 63488;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-int *referenciaRdDesdeOffImm(char *string)
-{
-    int numero = atoi(string);
-    if (numero >= 2048 && numero < 4096)
-    {
-        return &at;
-    }
-    else if (numero >= 4096 && numero < 6144)
-    {
-        return &v0;
-    }
-    else if (numero >= 6144 && numero < 8192)
-    {
-        return &v1;
-    }
-    else if (numero >= 8192 && numero < 10240)
-    {
-        return &a0;
-    }
-    else if (numero >= 10240 && numero < 12288)
-    {
-        return &a1;
-    }
-    else if (numero >= 14336 && numero < 16384)
-    {
-        return &a2;
-    }
-    else if (numero >= 16384 && numero < 18432)
-    {
-        return &a3;
-    }
-    else if (numero >= 18432 && numero < 20480)
-    {
-        return &t0;
-    }
-    else if (numero >= 20480 && numero < 22528)
-    {
-        return &t1;
-    }
-    else if (numero >= 22528 && numero < 24576)
-    {
-        return &t2;
-    }
-    else if (numero >= 24576 && numero < 26624)
-    {
-        return &t3;
-    }
-    else if (numero >= 4096 && numero < 28672)
-    {
-        return &t4;
-    }
-    else if (numero >= 28672 && numero < 30720)
-    {
-        return &t5;
-    }
-    else if (numero >= 30720 && numero < 32768)
-    {
-        return &t6;
-    }
-    else if (numero >= 32768 && numero < 34816)
-    {
-        return &t7;
-    }
-    else if (numero >= 34816 && numero < 36864)
-    {
-        return &s0;
-    }
-    else if (numero >= 36864 && numero < 38912)
-    {
-        return &s1;
-    }
-    else if (numero >= 38912 && numero < 40960)
-    {
-        return &s2;
-    }
-    else if (numero >= 40960 && numero < 43008)
-    {
-        return &s3;
-    }
-    else if (numero >= 43008 && numero < 45056)
-    {
-        return &s4;
-    }
-    else if (numero >= 45056 && numero < 47104)
-    {
-        return &s5;
-    }
-    else if (numero >= 47104 && numero < 49152)
-    {
-        return &s6;
-    }
-    else if (numero >= 49152 && numero < 51200)
-    {
-        return &s7;
-    }
-    else if (numero >= 51200 && numero < 53248)
-    {
-        return &t8;
-    }
-    else if (numero >= 53248 && numero < 55296)
-    {
-        return &t9;
-    }
-    else if (numero >= 55296 && numero < 57344)
-    {
-        return &k0;
-    }
-    else if (numero >= 57344 && numero < 59392)
-    {
-        return &k1;
-    }
-    else if (numero >= 59392 && numero < 61440)
-    {
-        return &gp;
-    }
-    else if (numero >= 61440 && numero < 63488)
-    {
-        return &sp;
-    }
-    else if (numero >= 63488 && numero < 65535)
-    {
-        return &fp;
     }
     else
     {
