@@ -1,12 +1,10 @@
-addi $t0, $zero, 24
-addi $t1, $zero, 10
+addi $t0, $zero, 10
+addi $t1, $zero, 20
+j salto
 add $t2, $t0, $t1
-lw $t1, 0($sp)
-sw $t0, 0($sp)
-lw $t1, 0($sp)
-addi $t1, $t1, 3
-subi $t2, $t1, 2
-beq $t1, $t2, ZERO
-add $t1, $t1, $t1
-addi $t1, $t1, 3
-subi $t2, $t1, 2
+sub $t3, $t1, $t0
+sub $t3, $t1, $t0
+sub $t7, $t1, $t0
+subi $t3, $t1, 5
+salto:
+addi $t4, $zero, 77

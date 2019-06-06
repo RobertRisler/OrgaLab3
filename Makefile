@@ -1,2 +1,2 @@
 all:
-	gcc -std=c11 -o SimuladorDataPath LaboratorioOrga.c
+	gcc -std=c11 -o Pipeline Main.c

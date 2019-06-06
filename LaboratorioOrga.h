@@ -30,7 +30,12 @@ void removerComa(char *string, char basura);
 
 void ejecucionPrograma(lista *memoriaIns, char *salida);
 
-
+void etapaIF(int numeroCiclo, lista *memoriaIns);
+void etapaID();
+void etapaEX1();
+void etapaEX2(lista *memoriaIns);
+void etapaMEM();
+void etapaWB();
 
 void ejecutarInstruccion(nodo *instruccion);
 
@@ -45,4 +50,6 @@ void escribirRegistros(FILE **pArchivo);
 void imprimirInstruccion(nodo *instruccion);
 void imprimirMemoriaInstrucciones(lista *memoriaIns);
 void imprimirRegistros();
+void imprimirPipeline();
+void imprimirBuffer();
 void liberarMemoria(lista *memoriaIns);

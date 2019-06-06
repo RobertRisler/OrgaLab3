@@ -62,25 +62,28 @@ nodo *EX2 = NULL;
 nodo *MEM = NULL;
 nodo *WB = NULL;
 
+// ##### Bandera pipeline #####
+// Bandera que sirve para indicar el momento en que se vació el pipeline, se cambia a
+// 1 cuando el pipeline terminó.
+int banderaPipeline = 0;
+
 // ##### Buffers #####
 // Datos que es necesario guardar entre etapas.
 int IFID = 0;            // (Buffer IFID)
-int IDEX1[2] = {0};      // Guarda rs/rt o rs/immediate o rs/offset (Buffer IDEX1)
-int EX1EX2 = 0;          // Guarda el resultado de la ALU (Buffer EX1EX2)
+int IDEX1[3] = {0};      // Guarda rs/rt/0 o rs/rt/immediate o rs/rt/offset (Buffer IDEX1)
+int EX1EX2[2] = {0};     // Guarda el resultado de la ALU y rt (Buffer EX1EX2)
 nodo *EX2MEM_PTR = NULL; // Guarda la nueva dirección de contadorDePrograma (Buffer EX2MEM)
-int EX2MEM_DIR = 0;      // Guarda la dirección calculada en EX1 (Buffer EX2MEM)
-int MEMWB = 0;           // Guarda el dato leido de memoria (Buffer MEMWB)
+int EX2MEM[2] = {0};     // Guarda el resultado del calculo en EX1 y rt (Buffer EX2MEM)
+int MEMWB[2] = {0};      // Guarda el dato leido de memoria (Buffer MEMWB)
 
 // ##### Flush #####
 // Señal que indica la necesidad de hacer un flush, 0 indica no y 1 indica si.
 int flush = 0;
 
-// ########## Main ##########
-int main()
-{
-    menu();
-    return 0;
-}
+// ##### Contador de Programa #####
+// Puntero que hace la función del contador de programa, indica que instrucción es la última
+// en entrar al pipeline
+nodo *contadorDePrograma = NULL;
 
 // ########## Funciones ##########
 void menu()
@@ -132,8 +135,7 @@ void guardarInstrucciones(char *nombre, lista *memoriaIns)
         char *token1, *token2, *token3, *token4;
         token1 = strtok(linea, " ");
 
-        if (strcmp(token1, "add") == 0 || strcmp(token1, "sub") == 0 || strcmp(token1, "and") == 0 ||
-            strcmp(token1, "or") == 0 || strcmp(token1, "slt") == 0)
+        if (strcmp(token1, "add") == 0 || strcmp(token1, "sub") == 0)
         {
             token2 = strtok(NULL, " ");
             token3 = strtok(NULL, " ");
@@ -147,14 +149,14 @@ void guardarInstrucciones(char *nombre, lista *memoriaIns)
             token4 = strtok(NULL, " ");
             ingresarInstruccion(memoriaIns, 2, token1, token2, token3, token4);
         }
-        else if (strcmp(token1, "addi") == 0)
+        else if (strcmp(token1, "addi") == 0 || strcmp(token1, "subi") == 0)
         {
             token2 = strtok(NULL, " ");
             token3 = strtok(NULL, " ");
             token4 = strtok(NULL, " ");
             ingresarInstruccion(memoriaIns, 3, token1, token2, token3, token4);
         }
-        else if (strcmp(token1, "beq") == 0)
+        else if (strcmp(token1, "beq") == 0 || strcmp(token1, "bne") == 0)
         {
             token2 = strtok(NULL, " ");
             token3 = strtok(NULL, " ");
@@ -182,7 +184,7 @@ void ingresarInstruccion(lista *memoriaIns, int tipoIns, char *token1, char *tok
 
     switch (tipoIns)
     {
-    case 1: // add, sub, and, or, slt
+    case 1: // add, sub
         strcpy(instruccion->ins, token1);
         strcpy(instruccion->rd, token2);
         strcpy(instruccion->rs, token3);
@@ -194,13 +196,13 @@ void ingresarInstruccion(lista *memoriaIns, int tipoIns, char *token1, char *tok
         strcpy(instruccion->offset, token3);
         strcpy(instruccion->rs, token4);
         break;
-    case 3: // addi
+    case 3: // addi, subi
         strcpy(instruccion->ins, token1);
         strcpy(instruccion->rt, token2);
         strcpy(instruccion->rs, token3);
         strcpy(instruccion->immediate, token4);
         break;
-    case 4: // beq
+    case 4: // beq, bne
         strcpy(instruccion->ins, token1);
         strcpy(instruccion->rt, token2);
         strcpy(instruccion->rs, token3);
@@ -287,59 +289,68 @@ void ejecucionPrograma(lista *memoriaIns, char *archivo)
     fprintf(pArchivo, "- - - - - - - - - - INICIO DEL PROGRAMA - - - - - - - - - -\n");
 
     rellenarMemoria();
-    nodo *contadorDePrograma = memoriaIns->inicio;
+    contadorDePrograma = memoriaIns->inicio;
 
     int numeroCiclo = 0;
-    int bandera = 1;
 
-    do
+    while (banderaPipeline == 0)
     {
         numeroCiclo++;
+        printf("\nCiclo: %d\n\n", numeroCiclo);
 
-        // Etapa IF -> Mover punteros
+        etapaIF(numeroCiclo, memoriaIns);
 
-        // Etapa ID -> Leer Registros
-
-        // Etapa EX1 -> ALU
-
-        // Etapa EX2 -> Dirección
-
-        // Etapa MEM -> Escribir/Leer Memoria
-
-        // Etapa WB -> Escribir Registro
-
-        if (contadorDePrograma != NULL)
+        if (WB != NULL) // Etapa WB -> Escribir Registro
         {
-            contadorDePrograma = contadorDePrograma->sgte;
+            etapaWB();
         }
 
-    } while (bandera == 1);
+        if (MEM != NULL) // Etapa MEM -> Escribir/Leer Memoria
+        {
+            etapaMEM();
+        }
+
+        if (EX2 != NULL) // Etapa EX2 -> Dirección
+        {
+            etapaEX2(memoriaIns);
+        }
+
+        if (EX1 != NULL) // Etapa EX1 -> ALU
+        {
+            etapaEX1();
+        }
+
+        if (ID != NULL) // Etapa ID -> Leer Registros
+        {
+            etapaID();
+        }
+
+        imprimirPipeline();
+        imprimirBuffer();
+        imprimirRegistros();
+    }
 
     fclose(pArchivo);
     return;
 }
 
-void etapaIF(int numeroCiclo, lista *memoriaIns, int *bandera)
+void etapaIF(int numeroCiclo, lista *memoriaIns)
 {
-    // Inicio del programa
     if (IF == NULL && ID == NULL && EX1 == NULL && EX2 == NULL && MEM == NULL && WB == NULL && numeroCiclo == 1)
     {
         IF = memoriaIns->inicio;
     }
-    // Primeras dos instrucciones
     else if (IF != NULL && ID == NULL && EX1 == NULL && EX2 == NULL && MEM == NULL && WB == NULL)
     {
         ID = IF;
         IF = IF->sgte;
     }
-    // Primeras tres instrucciones
     else if (IF != NULL && ID != NULL && EX1 == NULL && EX2 == NULL && MEM == NULL && WB == NULL)
     {
         EX1 = ID;
         ID = IF;
         IF = IF->sgte;
     }
-    // Primeras cuatro instrucciones
     else if (IF != NULL && ID != NULL && EX1 != NULL && EX2 == NULL && MEM == NULL && WB == NULL)
     {
         EX2 = EX1;
@@ -347,7 +358,6 @@ void etapaIF(int numeroCiclo, lista *memoriaIns, int *bandera)
         ID = IF;
         IF = IF->sgte;
     }
-    // Primeras cinco instrucciones
     else if (IF != NULL && ID != NULL && EX1 != NULL && EX2 != NULL && MEM == NULL && WB == NULL)
     {
         MEM = EX2;
@@ -356,7 +366,6 @@ void etapaIF(int numeroCiclo, lista *memoriaIns, int *bandera)
         ID = IF;
         IF = IF->sgte;
     }
-    // Primeras seis instrucciones
     else if (IF != NULL && ID != NULL && EX1 != NULL && EX2 != NULL && MEM != NULL && WB == NULL)
     {
         WB = MEM;
@@ -366,7 +375,6 @@ void etapaIF(int numeroCiclo, lista *memoriaIns, int *bandera)
         ID = IF;
         IF = IF->sgte;
     }
-    // Instrucciones siguientes
     else if (IF != NULL && ID != NULL && EX1 != NULL && EX2 != NULL && MEM != NULL && WB != NULL)
     {
         WB = MEM;
@@ -405,10 +413,7 @@ void etapaIF(int numeroCiclo, lista *memoriaIns, int *bandera)
     else if (IF == NULL && ID == NULL && EX1 == NULL && EX2 == NULL && MEM == NULL && WB != NULL)
     {
         WB = MEM;
-    }
-    else if (IF == NULL && ID == NULL && EX1 == NULL && EX2 == NULL && MEM == NULL && WB == NULL && numeroCiclo != 1)
-    {
-        bandera = 0;
+        banderaPipeline = 1;
     }
 
     return;
@@ -420,43 +425,69 @@ void etapaID()
     {
         IDEX1[0] = obtenerDato(ID->rs);
         IDEX1[1] = obtenerDato(ID->rt);
+        IDEX1[2] = 0;
     }
     else if (strcmp(ID->ins, "addi") == 0 || strcmp(ID->ins, "subi") == 0)
     {
         IDEX1[0] = obtenerDato(ID->rs);
-        IDEX1[1] = atoi(ID->immediate);
+        IDEX1[1] = obtenerDato(ID->rt);
+        IDEX1[2] = atoi(ID->immediate);
     }
     else if (strcmp(ID->ins, "lw") == 0 || strcmp(ID->ins, "sw") == 0)
     {
         IDEX1[0] = obtenerDato(ID->rs);
-        IDEX1[1] = atoi(ID->offset);
+        IDEX1[1] = obtenerDato(ID->rt);
+        IDEX1[2] = atoi(ID->offset);
     }
     else if (strcmp(ID->ins, "j") == 0)
     {
         IDEX1[0] = 0;
         IDEX1[1] = 0;
+        IDEX1[2] = 0;
     }
 
+    if (ID->sgte == NULL)
+    {
+        IFID = 0;
+    }
+    
     return;
 }
 
 void etapaEX1()
 {
-    if (strcmp(EX1->ins, "add") == 0 || strcmp(EX1->ins, "addi") == 0)
+    EX1EX2[0] = IDEX1[1];
+
+    if (strcmp(EX1->ins, "add") == 0)
     {
-        EX1EX2 = IDEX1[0] + IDEX1[1];
+        EX1EX2[1] = IDEX1[0] + IDEX1[1];
     }
-    else if (strcmp(EX1->ins, "sub") == 0 || strcmp(EX1->ins, "subi") == 0 || strcmp(EX1->ins, "beq") == 0 || strcmp(EX1->ins, "bne") == 0)
+    else if (strcmp(EX1->ins, "addi") == 0)
     {
-        EX1EX2 = IDEX1[0] - IDEX1[1];
+        EX1EX2[1] = IDEX1[0] + IDEX1[2];
+    }
+    else if (strcmp(EX1->ins, "sub") == 0 || strcmp(EX1->ins, "beq") == 0 || strcmp(EX1->ins, "bne") == 0)
+    {
+        EX1EX2[1] = IDEX1[0] - IDEX1[1];
+    }
+    else if (strcmp(EX1->ins, "subi") == 0)
+    {
+        EX1EX2[1] = IDEX1[0] - IDEX1[2];
     }
     else if (strcmp(EX1->ins, "lw") == 0 || strcmp(EX1->ins, "sw") == 0)
     {
-        EX1EX2 = (IDEX1[0] + IDEX1[1]) / 4;
+        EX1EX2[1] = (IDEX1[0] + IDEX1[1]) / 4;
     }
-    else if (strcmp(EX1->ins, "lw") == 0)
+    else if (strcmp(EX1->ins, "j") == 0)
     {
-        EX1EX2 = 0;
+        EX1EX2[1] = 0;
+    }
+
+    if (EX1->sgte == NULL)
+    {
+        IDEX1[0] = 0;
+        IDEX1[1] = 0;
+        IDEX1[2] = 0;
     }
 
     return;
@@ -464,18 +495,19 @@ void etapaEX1()
 
 void etapaEX2(lista *memoriaIns)
 {
-    if (((strcmp(EX2->ins, "beq") == 0) && (EX1EX2 == 0)) || /* beq y la resta dio cero */
-        ((strcmp(EX2->ins, "bne") == 0) && (EX1EX2 != 0)) || /* bne y la resta no dio cero */
-        ((strcmp(EX2->ins, "j") == 0)))                      /* salto incondicional */
-    {
-        EX2MEM_DIR = 0;
+    EX2MEM[0] = EX1EX2[0];
+    EX2MEM[1] = EX1EX2[1];
 
+    if (((strcmp(EX2->ins, "beq") == 0) && (EX1EX2[1] == 0)) || /* beq y la resta dio cero */
+        ((strcmp(EX2->ins, "bne") == 0) && (EX1EX2[1] != 0)) || /* bne y la resta no dio cero */
+        ((strcmp(EX2->ins, "j") == 0)))                         /* salto incondicional */
+    {
         char *etiqueta = EX2->label;
         int bandera = 0;
 
         nodo *auxiliar = memoriaIns->inicio;
         strcat(etiqueta, ":");
-        
+
         while (bandera != 1 && auxiliar != NULL)
         {
             if ((strchr(auxiliar->ins, ':') != NULL) && (strcmp(auxiliar->ins, etiqueta) == 0))
@@ -495,15 +527,77 @@ void etapaEX2(lista *memoriaIns)
         EX2MEM_PTR = NULL;
     }
 
+    if (EX2->sgte == NULL)
+    {
+        EX1EX2[0] = 0;
+        EX1EX2[1] = 0;
+    }
+
     return;
 }
 
 void etapaMEM()
 {
+    if (strcmp(MEM->ins, "lw") == 0)
+    {
+        MEMWB[0] = 0;
+        MEMWB[1] = memoria[EX2MEM[1]];
+    }
+    else if (strcmp(MEM->ins, "sw") == 0)
+    {
+        MEMWB[0] = 0;
+        MEMWB[1] = 0;
+        memoria[EX2MEM[1]] = EX2MEM[0];
+    }
+    else if (strcmp(MEM->ins, "beq") == 0 || strcmp(MEM->ins, "bne") == 0 || strcmp(MEM->ins, "j") == 0)
+    {
+        MEMWB[0] = 0;
+        MEMWB[1] = 0;
+        contadorDePrograma = EX2MEM_PTR;
+        // Hacer función flush
+    }
+    else
+    {
+        MEMWB[0] = EX2MEM[1];
+        MEMWB[1] = 0;
+    }
+
+    if (MEM->sgte == NULL)
+    {
+        EX2MEM[0] = 0;
+        EX2MEM[1] = 0;
+    }
+
+    return;
 }
 
 void etapaWB()
 {
+    if (strcmp(WB->ins, "add") == 0 || strcmp(WB->ins, "sub") == 0)
+    {
+        *obtenerReferencia(WB->rd) = MEMWB[0];
+    }
+    else if (strcmp(WB->ins, "addi") == 0 || strcmp(WB->ins, "subi") == 0)
+    {
+        *obtenerReferencia(WB->rt) = MEMWB[0];
+    }
+    else if (strcmp(WB->ins, "lw") == 0)
+    {
+        *obtenerReferencia(WB->rt) = MEMWB[1];
+    }
+
+    if (contadorDePrograma != NULL)
+    {
+        contadorDePrograma = contadorDePrograma->sgte;
+    }
+
+    if (WB->sgte == NULL)
+    {
+        MEMWB[0] = 0;
+        MEMWB[1] = 0;
+    }
+
+    return;
 }
 
 int *obtenerReferencia(char *string)
@@ -932,6 +1026,29 @@ void imprimirRegistros()
     printf("$sp = %d\n", sp);
     printf("$fp = %d\n", fp);
     printf("$ra = %d\n", ra);
+    return;
+}
+
+void imprimirPipeline()
+{
+    printf("IF -> %s\n", IF->ins);
+    printf("ID -> %s\n", ID->ins);
+    printf("EX1 -> %s\n", EX1->ins);
+    printf("EX2 -> %s\n", EX2->ins);
+    printf("MEM -> %s\n", MEM->ins);
+    printf("WB -> %s\n\n", WB->ins);
+
+    return;
+}
+
+void imprimirBuffer()
+{
+    printf("IFID -> |%d|\n", IFID);
+    printf("IDEX1 -> |%d|%d|%d|\n", IDEX1[0], IDEX1[1], IDEX1[2]);
+    printf("EX1EX2 -> |%d|%d|\n", EX1EX2[0], EX1EX2[1]);
+    printf("EX2MEM -> |%d|%d|\n", EX2MEM[0], EX2MEM[1]);
+    printf("MEMWB -> |%d|%d|\n\n", MEMWB[0], MEMWB[1]);
+
     return;
 }
 
