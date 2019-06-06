@@ -9,9 +9,9 @@ typedef struct Nodo
     char rs[10];           // Primer operando
     char rt[10];           // Segundo operando / registro destino
     char rd[10];           // Registro destino
-    char label[10];        // Etiqueta para instrucciones beq / j
+    char label[10];        // Etiqueta para instrucciones beq / bne / j
     char offset[10];       // Dato para lw / sw
-    char immediate[10];    // Valor para instrucción addi
+    char immediate[10];    // Valor para instrucción addi / subi
     struct Nodo *sgte;
 } nodo;
 
@@ -29,6 +29,9 @@ void limpiarLinea(char *string);
 void removerComa(char *string, char basura);
 
 void ejecucionPrograma(lista *memoriaIns, char *salida);
+
+
+
 void ejecutarInstruccion(nodo *instruccion);
 
 int *obtenerReferencia(char *string);
