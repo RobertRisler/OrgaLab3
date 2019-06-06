@@ -1,0 +1,13 @@
+addi $t0, $zero, 24
+addi $t1, $zero, 10
+add $t2, $t0, $t1
+lw $t1, 0($sp)
+addi $t1, $t1, 3
+subi $t2, $t1, 2
+beq $t1, $t2, ZERO
+add $t1, $sp, $t1
+j END
+ZERO:
+sw $t1, 0($sp)
+lw $t3, 0($sp)
+END:

@@ -43,7 +43,7 @@ int k1 = 0;
 // ## $gp ##
 int gp = 0;
 // ## $sp ##
-int sp = 0;
+int sp = 512;
 // ## $fp ##
 int fp = 0;
 // ## $ra ##
@@ -51,16 +51,13 @@ int ra = 0;
 
 // ##### Memoria #####
 // Arreglo utilizado como memoria para guardar o cargar datos con sw y lw respectivamente.
-int memoria[2048];
+int memoria[1024];
 
 // ##### Miscelaneos #####
 // Puntero utilizado para la identificación de que ocurre un branch o un jump.
 // Se cambia al nombre de la etiqueta que se busca cuando se da el caso, luego
 // de encontrarla, se retorna el valor del puntero a NULL.
 char *etiqueta = NULL;
-
-// Variable utilizada para identificar el error que se produce en alguna instrucción.
-int tipoError = 0;
 
 // ########## Main ##########
 int main()
@@ -73,11 +70,11 @@ int main()
 void menu()
 {
     printf("\n");
-    printf("###############################################\n");
-    printf("#                                             #\n");
-    printf("#  PROGRAMA DE SIMULACION DE CAMINO DE DATOS  #\n");
-    printf("#                                             #\n");
-    printf("###############################################\n");
+    printf("########################################\n");
+    printf("#                                      #\n");
+    printf("#  PROGRAMA DE SIMULACION DE PIPELINE  #\n");
+    printf("#                                      #\n");
+    printf("########################################\n");
     printf("\n");
 
     char nombreArchivoInstrucciones[50];
@@ -157,6 +154,7 @@ void guardarInstrucciones(char *nombre, lista *memoriaIns)
             ingresarInstruccion(memoriaIns, 6, token1, "placeholder", "placeholder", "placeholder");
         }
     }
+
     fclose(pArchivo);
     return;
 }
@@ -338,7 +336,7 @@ void ejecucionPrograma(lista *memoriaIns, char *archivo)
         }
     }
     fprintf(pArchivo, "\n- - - - - - - - - - FIN DEL PROGRAMA - - - - - - - - - -");
-    
+
     printf("\nLos resultados han sido escritos en el archivo de texto: %s\n\n", archivo);
 
     fclose(pArchivo);
@@ -355,17 +353,25 @@ void ejecutarInstruccion(nodo *instruccion)
     {
         *obtenerReferencia(instruccion->rd) = obtenerDato(instruccion->rs) - obtenerDato(instruccion->rt);
     }
-    else if (strcmp(instruccion->ins, "and") == 0)
+    else if (strcmp(instruccion->ins, "addi") == 0)
     {
-        *obtenerReferencia(instruccion->rd) = obtenerDato(instruccion->rs) & obtenerDato(instruccion->rt);
+        *obtenerReferencia(instruccion->rt) = obtenerDato(instruccion->rs) + atoi(instruccion->immediate);
     }
-    else if (strcmp(instruccion->ins, "or") == 0)
+    else if (strcmp(instruccion->ins, "subi") == 0)
     {
-        *obtenerReferencia(instruccion->rd) = obtenerDato(instruccion->rs) | obtenerDato(instruccion->rt);
+        *obtenerReferencia(instruccion->rt) = obtenerDato(instruccion->rs) + atoi(instruccion->immediate);
     }
-    else if (strcmp(instruccion->ins, "slt") == 0)
+    else if (strcmp(instruccion->ins, "beq") == 0)
     {
-        *obtenerReferencia(instruccion->rd) = 1;
+        etiqueta = instruccion->label;
+    }
+    else if (strcmp(instruccion->ins, "bne") == 0)
+    {
+        etiqueta = instruccion->label;
+    }
+    else if (strcmp(instruccion->ins, "j") == 0)
+    {
+        etiqueta = instruccion->label;
     }
     else if (strcmp(instruccion->ins, "lw") == 0)
     {
@@ -376,18 +382,6 @@ void ejecutarInstruccion(nodo *instruccion)
     {
         int direccion = (obtenerDato(instruccion->rs) + atoi(instruccion->offset)) / 4;
         memoria[direccion] = obtenerDato(instruccion->rt);
-    }
-    else if (strcmp(instruccion->ins, "addi") == 0)
-    {
-        *obtenerReferencia(instruccion->rt) = obtenerDato(instruccion->rs) + atoi(instruccion->immediate);
-    }
-    else if (strcmp(instruccion->ins, "beq") == 0)
-    {
-        etiqueta = instruccion->label;
-    }
-    else if (strcmp(instruccion->ins, "j") == 0)
-    {
-        etiqueta = instruccion->label;
     }
 
     return;
@@ -826,7 +820,7 @@ void liberarMemoria(lista *memoriaIns)
 {
     nodo *aux1 = memoriaIns->inicio;
     nodo *aux2;
-    
+
     while (aux1 != NULL)
     {
         aux2 = aux1;
