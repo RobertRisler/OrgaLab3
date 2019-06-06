@@ -1,4 +1,4 @@
-#include "LaboratorioOrga.h"
+#include "LaboratorioOrga.c"
 
 // ########## Main ##########
 int main()
