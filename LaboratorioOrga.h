@@ -28,7 +28,7 @@ void ingresarInstruccion(lista *memoriaIns, int tipoIns, char *token1, char *tok
 void limpiarLinea(char *string);
 void removerComa(char *string, char basura);
 
-void ejecucionPrograma(lista *memoriaIns, char *salida);
+void ejecucionPrograma(lista *memoriaIns);
 
 void etapaIF(int numeroCiclo, lista *memoriaIns);
 void etapaID();

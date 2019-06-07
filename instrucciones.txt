@@ -1,10 +1,8 @@
 addi $t0, $zero, 10
 addi $t1, $zero, 20
-j salto
-add $t2, $t0, $t1
-sub $t3, $t1, $t0
-sub $t3, $t1, $t0
-sub $t7, $t1, $t0
-subi $t3, $t1, 5
-salto:
-addi $t4, $zero, 77
+addi $t2, $zero, 30
+addi $t3, $zero, 40
+addi $t0, $zero, 50
+addi $t1, $zero, 60
+addi $t2, $zero, 70
+addi $t3, $zero, 80

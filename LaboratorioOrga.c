@@ -97,22 +97,17 @@ void menu()
     printf("\n");
 
     char nombreArchivoInstrucciones[50];
-    printf("\n(No olvide la extension del archivo)\nIngrese el nombre del archivo de instrucciones:\n");
+    printf("(No olvide la extension del archivo)\nIngrese el nombre del archivo de instrucciones:\n");
     scanf("%s", nombreArchivoInstrucciones);
-
-    char nombreArchivoSalida[50];
-    printf("\n(No olvide la extension del archivo)\nIngrese el nombre del archivo de salida:\n");
-    scanf("%s", nombreArchivoSalida);
 
     // Lista donde se guardan todas las instrucciones.
     lista *memoriaInstrucciones = (lista *)malloc(sizeof(lista));
     memoriaInstrucciones->largo = 0;
     memoriaInstrucciones->inicio = NULL;
-    //guardarInstrucciones(nombreArchivoInstrucciones, memoriaInstrucciones);
-    guardarInstrucciones("instrucciones.txt", memoriaInstrucciones);
+    guardarInstrucciones(nombreArchivoInstrucciones, memoriaInstrucciones);
 
     // Ejecución general del programa.
-    ejecucionPrograma(memoriaInstrucciones, nombreArchivoSalida);
+    ejecucionPrograma(memoriaInstrucciones);
 
     // Se libera la memoria de cada nodo y de la lista.
     liberarMemoria(memoriaInstrucciones);
@@ -282,11 +277,18 @@ void removerComa(char *string, char basura)
     return;
 }
 
-void ejecucionPrograma(lista *memoriaIns, char *archivo)
+void ejecucionPrograma(lista *memoriaIns)
 {
     FILE *pArchivo;
-    pArchivo = fopen(archivo, "w");
-    fprintf(pArchivo, "- - - - - - - - - - INICIO DEL PROGRAMA - - - - - - - - - -\n");
+    pArchivo = fopen("RIESGOS_DETECTADOS.txt", "w");
+    fprintf(pArchivo, "Funcionalidad no implementada.");
+    fclose(pArchivo);
+
+    pArchivo = fopen("SOLUCION_RIESGOS.txt", "w");
+    fprintf(pArchivo, "Funcionalidad no implementada.");
+    fclose(pArchivo);
+
+    pArchivo = fopen("REGISTROS.txt", "w");
 
     rellenarMemoria();
     contadorDePrograma = memoriaIns->inicio;
@@ -296,7 +298,6 @@ void ejecucionPrograma(lista *memoriaIns, char *archivo)
     while (banderaPipeline == 0)
     {
         numeroCiclo++;
-        printf("\nCiclo: %d\n\n", numeroCiclo);
 
         etapaIF(numeroCiclo, memoriaIns);
 
@@ -324,13 +325,12 @@ void ejecucionPrograma(lista *memoriaIns, char *archivo)
         {
             etapaID();
         }
-
-        imprimirPipeline();
-        imprimirBuffer();
-        imprimirRegistros();
     }
 
+    escribirRegistros(&pArchivo);
     fclose(pArchivo);
+
+    printf("Se escribieron los archivos solicitados.\n");
     return;
 }
 
@@ -945,7 +945,7 @@ void escribirRegistros(FILE **pArchivo)
     fprintf(*pArchivo, "$gp = %d\n", gp);
     fprintf(*pArchivo, "$sp = %d\n", sp);
     fprintf(*pArchivo, "$fp = %d\n", fp);
-    fprintf(*pArchivo, "$ra = %d\n", ra);
+    fprintf(*pArchivo, "$ra = %d", ra);
     return;
 }
 
