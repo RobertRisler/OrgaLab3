@@ -86,6 +86,11 @@ int flush = 0;
 nodo *contadorDePrograma = NULL;
 
 // ########## Funciones ##########
+
+// Menú principal donde se pide el nombre de entrada del archivo de instrucciones, también se
+// hace el llamado a las funciones principales para la ejecución.
+// Entrada: Vacío.
+// Salida: Vacío.
 void menu()
 {
     printf("\n");
@@ -116,6 +121,10 @@ void menu()
     return;
 }
 
+// Se lee el archivo de instrucciones y se guardan en una lista enlazada.
+// Esta lista es utilizada como memoria de instrucciones.
+// Entrada: Char con el nombre del archivo, lista a ser rellenada con instrucciones.
+// Salida: Vacío.
 void guardarInstrucciones(char *nombre, lista *memoriaIns)
 {
     FILE *pArchivo;
@@ -173,6 +182,9 @@ void guardarInstrucciones(char *nombre, lista *memoriaIns)
     return;
 }
 
+// Ingresa una instrucción a la lista enlazada.
+// Entrada: Lista enlazada, entero para indicar el tipo de instrucción, char token 1-4 son las partes de la instrucción.
+// Salida: Vacío.
 void ingresarInstruccion(lista *memoriaIns, int tipoIns, char *token1, char *token2, char *token3, char *token4)
 {
     nodo *instruccion = (nodo *)malloc(sizeof(nodo));
@@ -235,6 +247,9 @@ void ingresarInstruccion(lista *memoriaIns, int tipoIns, char *token1, char *tok
     return;
 }
 
+// Remueve los espacios y el \n de una linea de instrucción.
+// Entrada: Char correspondiente a la linea de instrucción.
+// Salida: Vacío.
 void limpiarLinea(char *string)
 {
     while (strchr(string, ',') != NULL)
@@ -262,6 +277,9 @@ void limpiarLinea(char *string)
     return;
 }
 
+// Remueve las comas de una linea de instrucción.
+// Entrada: Char correspondiente a la linea de instrucción y char a remover.
+// Salida: Vacío.
 void removerComa(char *string, char basura)
 {
     char *aux1, *aux2;
@@ -277,6 +295,10 @@ void removerComa(char *string, char basura)
     return;
 }
 
+// Etapa principal de ejecución, se escriben los archivos solicitados y se llaman a las funciones que
+// simulan al pipeline.
+// Entrada: Lista enlazada con las instrucciones.
+// Salida: Vacío.
 void ejecucionPrograma(lista *memoriaIns)
 {
     FILE *pArchivo;
@@ -334,6 +356,10 @@ void ejecucionPrograma(lista *memoriaIns)
     return;
 }
 
+// Ejecución de la etapa Instruction Fetch. Se mueven los punteros que indican en que etapa se encuentra
+// dicha instrucción.
+// Entrada: Entero con el número del ciclo actual, lista enlazada con las instrucciones.
+// Salida: Vacío.
 void etapaIF(int numeroCiclo, lista *memoriaIns)
 {
     if (IF == NULL && ID == NULL && EX1 == NULL && EX2 == NULL && MEM == NULL && WB == NULL && numeroCiclo == 1)
@@ -419,6 +445,10 @@ void etapaIF(int numeroCiclo, lista *memoriaIns)
     return;
 }
 
+// Ejecución de la etapa Instruction Decode. Se guardan los datos necesarios para la instrucción en el
+// buffer IDEX1.
+// Entrada: Vacío.
+// Salida: Vacío.
 void etapaID()
 {
     if (strcmp(ID->ins, "add") == 0 || strcmp(ID->ins, "sub") == 0 || strcmp(ID->ins, "beq") == 0 || strcmp(ID->ins, "bne") == 0)
@@ -454,6 +484,10 @@ void etapaID()
     return;
 }
 
+// Ejecución de la etapa Execution 1. Se hacen cálculos relacionados a la ALU y se guaran en el
+// buffer EX1EX2.
+// Entrada: Vacío.
+// Salida: Vacío.
 void etapaEX1()
 {
     EX1EX2[0] = IDEX1[1];
@@ -493,6 +527,10 @@ void etapaEX1()
     return;
 }
 
+// Ejecución de la etapa Execution 2. Se busca la etiqueta correspondiente al salto o branch.
+// Si es necesario, se guarda en buffer el puntero hacía donde se debe mover el contador de programa.
+// Entrada: Lista enlazada con las instrucciones.
+// Salida: Vacío.
 void etapaEX2(lista *memoriaIns)
 {
     EX2MEM[0] = EX1EX2[0];
@@ -536,6 +574,10 @@ void etapaEX2(lista *memoriaIns)
     return;
 }
 
+// Ejecución de la etapa Memory Access. Se escribe o lee un dato de la memoria de datos y si es necesario
+// se escribe en el buffer MEMWB el dato leido.
+// Entrada: Vacío.
+// Salida: Vacío.
 void etapaMEM()
 {
     if (strcmp(MEM->ins, "lw") == 0)
@@ -571,6 +613,9 @@ void etapaMEM()
     return;
 }
 
+// Ejecución de la etapa Write Back. Escribe sobre un registro un dato guardado en el buffer MEMWB.
+// Entrada: Vacío.
+// Salida: Vacío.
 void etapaWB()
 {
     if (strcmp(WB->ins, "add") == 0 || strcmp(WB->ins, "sub") == 0)
@@ -600,6 +645,9 @@ void etapaWB()
     return;
 }
 
+// Se obtiene la referencia de donde se guarda el dato del registro solicitado.
+// Entrada: Char que indica el registro al que se refiere.
+// Salida: Referencia a entero.
 int *obtenerReferencia(char *string)
 {
     if (strcmp(string, "$zero") == 0)
@@ -736,6 +784,9 @@ int *obtenerReferencia(char *string)
     }
 }
 
+// Se obtiene el dato dentro de un registro solicitado.
+// Entrada: Char que indica el registro al que se refiere.
+// Salida. Entero.
 int obtenerDato(char *string)
 {
     if (strcmp(string, "$zero") == 0)
@@ -872,6 +923,9 @@ int obtenerDato(char *string)
     }
 }
 
+// Se rellena la memoria de datos con 0.
+// Entrada: Vacío.
+// Salida: Vacío.
 void rellenarMemoria()
 {
     int i;
@@ -882,6 +936,9 @@ void rellenarMemoria()
     return;
 }
 
+// Se escribe una instruccion dentro de un archivo.
+// Entrada: Puntero a archivo a escribir, puntero a nodo que contiene la instrucción.
+// Salida: Vacío.
 void escribirInstruccion(FILE **pArchivo, nodo *instruccion)
 {
     if (strcmp(instruccion->ins, "add") == 0 || strcmp(instruccion->ins, "sub") == 0 || strcmp(instruccion->ins, "and") == 0 ||
@@ -912,6 +969,9 @@ void escribirInstruccion(FILE **pArchivo, nodo *instruccion)
     return;
 }
 
+// Se escriben los valores de los registros dentro de un archivo.
+// Entrada: Puntero a archivo a escribir.
+// Salida: Vacío.
 void escribirRegistros(FILE **pArchivo)
 {
     fprintf(*pArchivo, "$zero = %d\n", zero);
@@ -949,6 +1009,9 @@ void escribirRegistros(FILE **pArchivo)
     return;
 }
 
+// Se muestra por pantalla una instrucción.
+// Entrada: Puntero a nodo con la instrucción.
+// Salida: Vacío.
 void imprimirInstruccion(nodo *instruccion)
 {
     if (strcmp(instruccion->ins, "add") == 0 || strcmp(instruccion->ins, "sub") == 0 || strcmp(instruccion->ins, "and") == 0 ||
@@ -979,6 +1042,9 @@ void imprimirInstruccion(nodo *instruccion)
     return;
 }
 
+// Se muestra por pantalla la memoria de instrucciones.
+// Entrada: Lista enlazada con las instrucciones.
+// Salida: Vacío.
 void imprimirMemoriaInstrucciones(lista *memoriaIns)
 {
     int i;
@@ -992,6 +1058,9 @@ void imprimirMemoriaInstrucciones(lista *memoriaIns)
     return;
 }
 
+// Se muestran por pantalla los registros y sus valores.
+// Entrada: Vacío.
+// Salida: Vacío.
 void imprimirRegistros()
 {
     printf("$zero = %d\n", zero);
@@ -1029,6 +1098,9 @@ void imprimirRegistros()
     return;
 }
 
+// Se muestra por pantalla el pipeline y que instrucción se encuentra en que etapa.
+// Entrada: Vacío.
+// Salida: Vacío.
 void imprimirPipeline()
 {
     printf("IF -> %s\n", IF->ins);
@@ -1041,6 +1113,9 @@ void imprimirPipeline()
     return;
 }
 
+// Se muestra por pantalla los valores que se encuentran en los distintos buffers.
+// Entrada: Vacío.
+// Salida: Vacío.
 void imprimirBuffer()
 {
     printf("IFID -> |%d|\n", IFID);
@@ -1052,6 +1127,9 @@ void imprimirBuffer()
     return;
 }
 
+// Se libera la memoria solicitada para los nodos y la lista enlaraza.
+// Entrada: Lista enlazada con las instrucciones.
+// Salida: Vacío.
 void liberarMemoria(lista *memoriaIns)
 {
     nodo *aux1 = memoriaIns->inicio;
